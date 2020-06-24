@@ -48,9 +48,9 @@ public class HandlerServer {
         }
     }
 
-    public void sendTrackPoint(TrackPoint trackPoint, int gpsAccuracy) {
+    public void sendTrackPoint(TrackPoint trackPoint, int recordingGpsAccuracy) {
         for (HandlerSubscriber s : subscriberList) {
-            s.newTrackPoint(trackPoint, gpsAccuracy);
+            s.newTrackPoint(trackPoint, recordingGpsAccuracy);
         }
     }
 

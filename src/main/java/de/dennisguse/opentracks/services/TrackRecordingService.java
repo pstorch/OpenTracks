@@ -492,7 +492,7 @@ public class TrackRecordingService extends Service implements HandlerServer.Hand
     }
 
     @Override
-    public void newTrackPoint(TrackPoint trackPoint, int gpsAccuracy) {
+    public void newTrackPoint(TrackPoint trackPoint, int recordingGpsAccuracy) {
         if (!isRecording() || isPaused()) {
             Log.w(TAG, "Ignore newTrackPoint. Not recording or paused.");
             return;
@@ -506,7 +506,7 @@ public class TrackRecordingService extends Service implements HandlerServer.Hand
 
         fillWithSensorDataSet(trackPoint);
 
-        notificationManager.updateTrackPoint(this, trackPoint, gpsAccuracy);
+        notificationManager.updateTrackPoint(this, trackPoint, recordingGpsAccuracy);
 
         TrackPointUtils.fixTime(trackPoint);
 
