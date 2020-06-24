@@ -24,7 +24,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.database.sqlite.SQLiteException;
-import android.location.Location;
 import android.net.Uri;
 import android.os.IBinder;
 import android.os.PowerManager.WakeLock;
@@ -76,7 +75,6 @@ public class TrackRecordingService extends Service implements HandlerServer.Hand
     private boolean recordingTrackPaused;
     private int recordingDistanceInterval;
     private int maxRecordingDistance;
-    private int recordingGpsAccuracy;
 
     private final OnSharedPreferenceChangeListener sharedPreferenceChangeListener = new OnSharedPreferenceChangeListener() {
         @Override
@@ -103,9 +101,6 @@ public class TrackRecordingService extends Service implements HandlerServer.Hand
             }
             if (PreferencesUtils.isKey(context, R.string.max_recording_distance_key, key)) {
                 maxRecordingDistance = PreferencesUtils.getMaxRecordingDistance(context);
-            }
-            if (PreferencesUtils.isKey(context, R.string.recording_gps_accuracy_key, key)) {
-                recordingGpsAccuracy = PreferencesUtils.getRecordingGPSAccuracy(context);
             }
         }
     };
@@ -497,46 +492,26 @@ public class TrackRecordingService extends Service implements HandlerServer.Hand
     }
 
     @Override
-    public void newLocation(Location location) {
+    public void newTrackPoint(TrackPoint trackPoint, int gpsAccuracy) {
         if (!isRecording() || isPaused()) {
-            Log.w(TAG, "Ignore onLocationChangedAsync. Not recording or paused.");
+            Log.w(TAG, "Ignore newTrackPoint. Not recording or paused.");
             return;
         }
 
         Track track = contentProviderUtils.getTrack(recordingTrackId);
         if (track == null) {
-            Log.w(TAG, "Ignore onLocationChangedAsync. No track.");
+            Log.w(TAG, "Ignore newTrackPoint. No track.");
             return;
         }
 
-        if (!LocationUtils.isValidLocation(location)) {
-            Log.w(TAG, "Ignore onLocationChangedAsync. location is invalid.");
-            return;
-        }
-
-        TrackPoint trackPoint = new TrackPoint(location);
         fillWithSensorDataSet(trackPoint);
 
-        notificationManager.updateTrackPoint(this, trackPoint, recordingGpsAccuracy);
-
-        if (!TrackPointUtils.fulfillsAccuracy(trackPoint, recordingGpsAccuracy)) {
-            Log.d(TAG, "Ignore onLocationChangedAsync. Poor accuracy.");
-            return;
-        }
+        notificationManager.updateTrackPoint(this, trackPoint, gpsAccuracy);
 
         TrackPointUtils.fixTime(trackPoint);
 
         //TODO Figure out how to avoid loading the lastValidTrackPoint from the database
         TrackPoint lastValidTrackPoint = getLastValidTrackPointInCurrentSegment(track.getId());
-        /*long idleTime = 0L;
-        if (TrackPointUtils.after(trackPoint, lastValidTrackPoint)) {
-            idleTime = trackPoint.getTime() - lastValidTrackPoint.getTime();
-        }
-
-        locationListenerPolicy.updateIdleTime(idleTime);
-        if (currentRecordingInterval != locationListenerPolicy.getDesiredPollingInterval()) {
-            registerLocationListener();
-        }*/
 
         //Storing trackPoint
 

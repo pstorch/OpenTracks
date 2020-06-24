@@ -6,6 +6,8 @@ import android.location.Location;
 import java.util.ArrayList;
 import java.util.List;
 
+import de.dennisguse.opentracks.content.data.TrackPoint;
+
 public class HandlerServer {
     private String TAG = HandlerServer.class.getSimpleName();
 
@@ -38,20 +40,22 @@ public class HandlerServer {
     }
 
     public void unsubscribe(HandlerSubscriber s) {
-        subscriberList.remove(s);
-        if (subscriberList.isEmpty()) {
-            locationHandler.onStop();
+        if (subscriberList.contains(s)) {
+            subscriberList.remove(s);
+            if (subscriberList.isEmpty()) {
+                locationHandler.onStop();
+            }
         }
     }
 
-    public void sendLocation(Location location) {
+    public void sendTrackPoint(TrackPoint trackPoint, int gpsAccuracy) {
         for (HandlerSubscriber s : subscriberList) {
-            s.newLocation(location);
+            s.newTrackPoint(trackPoint, gpsAccuracy);
         }
     }
 
     public interface HandlerSubscriber {
-        void newLocation(Location location);
+        void newTrackPoint(TrackPoint trackPoint, int gpsAccuracy);
     }
 }
 
