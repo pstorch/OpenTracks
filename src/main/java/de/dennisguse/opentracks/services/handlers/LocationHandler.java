@@ -1,4 +1,4 @@
-package de.dennisguse.opentracks.services;
+package de.dennisguse.opentracks.services.handlers;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -17,12 +17,12 @@ import de.dennisguse.opentracks.util.PreferencesUtils;
 import de.dennisguse.opentracks.util.TrackPointUtils;
 import de.dennisguse.opentracks.util.UnitConversions;
 
-public class LocationHandler implements LocationListener {
+class LocationHandler implements LocationListener {
 
     private String TAG = LocationHandler.class.getSimpleName();
 
     private LocationManager locationManager;
-    private Context context;
+    private HandlerServer handlerServer;
     private LocationListenerPolicy locationListenerPolicy;
     private long currentRecordingInterval;
     private int recordingGpsAccuracy;
@@ -31,12 +31,12 @@ public class LocationHandler implements LocationListener {
     private final SharedPreferences.OnSharedPreferenceChangeListener sharedPreferenceChangeListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
         @Override
         public void onSharedPreferenceChanged(SharedPreferences preferences, String key) {
-            if (PreferencesUtils.isKey(context, R.string.min_recording_interval_key, key)) {
-                int minRecordingInterval = PreferencesUtils.getMinRecordingInterval(context);
-                if (minRecordingInterval == PreferencesUtils.getMinRecordingIntervalAdaptBatteryLife(context)) {
+            if (PreferencesUtils.isKey(handlerServer.getContext(), R.string.min_recording_interval_key, key)) {
+                int minRecordingInterval = PreferencesUtils.getMinRecordingInterval(handlerServer.getContext());
+                if (minRecordingInterval == PreferencesUtils.getMinRecordingIntervalAdaptBatteryLife(handlerServer.getContext())) {
                     // Choose battery life over moving time accuracy.
                     locationListenerPolicy = new AdaptiveLocationListenerPolicy(30 * UnitConversions.ONE_SECOND_MS, 5 * UnitConversions.ONE_MINUTE_MS, 5);
-                } else if (minRecordingInterval == PreferencesUtils.getMinRecordingIntervalAdaptAccuracy(context)) {
+                } else if (minRecordingInterval == PreferencesUtils.getMinRecordingIntervalAdaptAccuracy(handlerServer.getContext())) {
                     // Get all the updates.
                     locationListenerPolicy = new AdaptiveLocationListenerPolicy(UnitConversions.ONE_SECOND_MS, 30 * UnitConversions.ONE_SECOND_MS, 0);
                 } else {
@@ -47,22 +47,25 @@ public class LocationHandler implements LocationListener {
                     registerLocationListener();
                 }
             }
-            if (PreferencesUtils.isKey(context, R.string.recording_gps_accuracy_key, key)) {
-                recordingGpsAccuracy = PreferencesUtils.getRecordingGPSAccuracy(context);
+            if (PreferencesUtils.isKey(handlerServer.getContext(), R.string.recording_gps_accuracy_key, key)) {
+                recordingGpsAccuracy = PreferencesUtils.getRecordingGPSAccuracy(handlerServer.getContext());
             }
         }
     };
 
-    public void onStart(Context context) {
-        this.context = context;
-        PreferencesUtils.register(context, sharedPreferenceChangeListener);
+    public LocationHandler(HandlerServer handlerServer) {
+        this.handlerServer = handlerServer;
+    }
+
+    public void onStart() {
+        PreferencesUtils.register(handlerServer.getContext(), sharedPreferenceChangeListener);
         sharedPreferenceChangeListener.onSharedPreferenceChanged(null, null);
-        locationManager = (LocationManager) this.context.getSystemService(Context.LOCATION_SERVICE);
+        locationManager = (LocationManager) handlerServer.getContext().getSystemService(Context.LOCATION_SERVICE);
         registerLocationListener();
     }
 
     public void onStop() {
-        PreferencesUtils.unregister(context, sharedPreferenceChangeListener);
+        PreferencesUtils.unregister(handlerServer.getContext(), sharedPreferenceChangeListener);
         unregisterLocationListener();
     }
 
@@ -86,7 +89,7 @@ public class LocationHandler implements LocationListener {
     }
 
     /**
-     * Checks if location is valid and builds a track point that will be send through HandlerServer to subscribers.
+     * Checks if location is valid and builds a track point that will be send through HandlerServer.
      *
      * @param location {@link Location} object.
      */
@@ -114,7 +117,7 @@ public class LocationHandler implements LocationListener {
         }
 
         lastValidTrackPoint = trackPoint;
-        HandlerServer.getInstance(context).sendTrackPoint(trackPoint, recordingGpsAccuracy);
+        handlerServer.sendTrackPoint(trackPoint, recordingGpsAccuracy);
     }
 
     private void registerLocationListener() {

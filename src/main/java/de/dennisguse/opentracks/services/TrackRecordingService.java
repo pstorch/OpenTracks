@@ -43,6 +43,7 @@ import de.dennisguse.opentracks.content.provider.ContentProviderUtils;
 import de.dennisguse.opentracks.content.provider.CustomContentProvider;
 import de.dennisguse.opentracks.content.provider.TrackPointIterator;
 import de.dennisguse.opentracks.content.sensor.SensorDataSet;
+import de.dennisguse.opentracks.services.handlers.HandlerServer;
 import de.dennisguse.opentracks.services.sensors.BluetoothRemoteSensorManager;
 import de.dennisguse.opentracks.services.tasks.AnnouncementPeriodicTaskFactory;
 import de.dennisguse.opentracks.services.tasks.PeriodicTaskExecutor;
@@ -62,7 +63,7 @@ import de.dennisguse.opentracks.util.TrackPointUtils;
  *
  * @author Leif Hendrik Wilden
  */
-public class TrackRecordingService extends Service implements HandlerServer.HandlerSubscriber {
+public class TrackRecordingService extends Service implements HandlerServer.HandlerServerInterface {
 
     private static final String TAG = TrackRecordingService.class.getSimpleName();
 
@@ -115,9 +116,14 @@ public class TrackRecordingService extends Service implements HandlerServer.Hand
 
     private TrackRecordingServiceBinder binder = new TrackRecordingServiceBinder(this);
 
+    private HandlerServer handlerServer;
+
     @Override
     public void onCreate() {
         super.onCreate();
+
+        handlerServer = new HandlerServer(getApplicationContext(),this);
+
         contentProviderUtils = new ContentProviderUtils(this);
         voiceExecutor = new PeriodicTaskExecutor(this, new AnnouncementPeriodicTaskFactory());
 
@@ -144,7 +150,7 @@ public class TrackRecordingService extends Service implements HandlerServer.Hand
 
     @Override
     public void onDestroy() {
-        HandlerServer.getInstance(this).unsubscribe(this);
+        handlerServer.stop();
 
         if (remoteSensorManager != null) {
             remoteSensorManager.stop();
@@ -369,7 +375,7 @@ public class TrackRecordingService extends Service implements HandlerServer.Hand
 
     private void startGps() {
         wakeLock = SystemUtils.acquireWakeLock(this, wakeLock);
-        HandlerServer.getInstance(this).subscribe(this);
+        handlerServer.start();
         showNotification(true);
     }
 
@@ -439,7 +445,7 @@ public class TrackRecordingService extends Service implements HandlerServer.Hand
         }
         lastTrackPoint = null;
 
-        HandlerServer.getInstance(this).unsubscribe(this);
+        handlerServer.stop();
 
         stopGps(trackStopped);
     }
@@ -452,7 +458,7 @@ public class TrackRecordingService extends Service implements HandlerServer.Hand
     void stopGps(boolean shutdown) {
         if (!isRecording()) return;
 
-        HandlerServer.getInstance(this).unsubscribe(this);
+        handlerServer.stop();
         showNotification(false);
         wakeLock = SystemUtils.releaseWakeLock(wakeLock);
         if (shutdown) {
