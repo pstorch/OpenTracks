@@ -103,6 +103,8 @@ public class TrackRecordingService extends Service implements HandlerServer.Hand
             if (PreferencesUtils.isKey(context, R.string.max_recording_distance_key, key)) {
                 maxRecordingDistance = PreferencesUtils.getMaxRecordingDistance(context);
             }
+
+            handlerServer.onSharedPreferenceChanged(context, preferences, key);
         }
     };
 
@@ -122,7 +124,7 @@ public class TrackRecordingService extends Service implements HandlerServer.Hand
     public void onCreate() {
         super.onCreate();
 
-        handlerServer = new HandlerServer(getApplicationContext(),this);
+        handlerServer = new HandlerServer(this);
 
         contentProviderUtils = new ContentProviderUtils(this);
         voiceExecutor = new PeriodicTaskExecutor(this, new AnnouncementPeriodicTaskFactory());
@@ -150,7 +152,7 @@ public class TrackRecordingService extends Service implements HandlerServer.Hand
 
     @Override
     public void onDestroy() {
-        handlerServer.stop();
+        handlerServer.stop(this);
 
         if (remoteSensorManager != null) {
             remoteSensorManager.stop();
@@ -375,7 +377,7 @@ public class TrackRecordingService extends Service implements HandlerServer.Hand
 
     private void startGps() {
         wakeLock = SystemUtils.acquireWakeLock(this, wakeLock);
-        handlerServer.start();
+        handlerServer.start(this);
         showNotification(true);
     }
 
@@ -445,7 +447,7 @@ public class TrackRecordingService extends Service implements HandlerServer.Hand
         }
         lastTrackPoint = null;
 
-        handlerServer.stop();
+        handlerServer.stop(this);
 
         stopGps(trackStopped);
     }
@@ -458,7 +460,7 @@ public class TrackRecordingService extends Service implements HandlerServer.Hand
     void stopGps(boolean shutdown) {
         if (!isRecording()) return;
 
-        handlerServer.stop();
+        handlerServer.stop(this);
         showNotification(false);
         wakeLock = SystemUtils.releaseWakeLock(wakeLock);
         if (shutdown) {

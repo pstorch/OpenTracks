@@ -17,7 +17,7 @@ import de.dennisguse.opentracks.util.PreferencesUtils;
 import de.dennisguse.opentracks.util.TrackPointUtils;
 import de.dennisguse.opentracks.util.UnitConversions;
 
-class LocationHandler implements LocationListener {
+class LocationHandler implements HandlerServer.Handler, LocationListener {
 
     private String TAG = LocationHandler.class.getSimpleName();
 
@@ -28,45 +28,43 @@ class LocationHandler implements LocationListener {
     private int recordingGpsAccuracy;
     private TrackPoint lastValidTrackPoint;
 
-    private final SharedPreferences.OnSharedPreferenceChangeListener sharedPreferenceChangeListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
-        @Override
-        public void onSharedPreferenceChanged(SharedPreferences preferences, String key) {
-            if (PreferencesUtils.isKey(handlerServer.getContext(), R.string.min_recording_interval_key, key)) {
-                int minRecordingInterval = PreferencesUtils.getMinRecordingInterval(handlerServer.getContext());
-                if (minRecordingInterval == PreferencesUtils.getMinRecordingIntervalAdaptBatteryLife(handlerServer.getContext())) {
-                    // Choose battery life over moving time accuracy.
-                    locationListenerPolicy = new AdaptiveLocationListenerPolicy(30 * UnitConversions.ONE_SECOND_MS, 5 * UnitConversions.ONE_MINUTE_MS, 5);
-                } else if (minRecordingInterval == PreferencesUtils.getMinRecordingIntervalAdaptAccuracy(handlerServer.getContext())) {
-                    // Get all the updates.
-                    locationListenerPolicy = new AdaptiveLocationListenerPolicy(UnitConversions.ONE_SECOND_MS, 30 * UnitConversions.ONE_SECOND_MS, 0);
-                } else {
-                    locationListenerPolicy = new AbsoluteLocationListenerPolicy(minRecordingInterval * UnitConversions.ONE_SECOND_MS);
-                }
-
-                if (locationManager != null) {
-                    registerLocationListener();
-                }
-            }
-            if (PreferencesUtils.isKey(handlerServer.getContext(), R.string.recording_gps_accuracy_key, key)) {
-                recordingGpsAccuracy = PreferencesUtils.getRecordingGPSAccuracy(handlerServer.getContext());
-            }
-        }
-    };
-
     public LocationHandler(HandlerServer handlerServer) {
         this.handlerServer = handlerServer;
     }
 
-    public void onStart() {
-        PreferencesUtils.register(handlerServer.getContext(), sharedPreferenceChangeListener);
-        sharedPreferenceChangeListener.onSharedPreferenceChanged(null, null);
-        locationManager = (LocationManager) handlerServer.getContext().getSystemService(Context.LOCATION_SERVICE);
+    @Override
+    public void onStart(Context context) {
+        locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
         registerLocationListener();
     }
 
-    public void onStop() {
-        PreferencesUtils.unregister(handlerServer.getContext(), sharedPreferenceChangeListener);
+    @Override
+    public void onStop(Context context) {
+        locationManager = null;
         unregisterLocationListener();
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(Context context, SharedPreferences preferences, String key) {
+        if (PreferencesUtils.isKey(context, R.string.min_recording_interval_key, key)) {
+            int minRecordingInterval = PreferencesUtils.getMinRecordingInterval(context);
+            if (minRecordingInterval == PreferencesUtils.getMinRecordingIntervalAdaptBatteryLife(context)) {
+                // Choose battery life over moving time accuracy.
+                locationListenerPolicy = new AdaptiveLocationListenerPolicy(30 * UnitConversions.ONE_SECOND_MS, 5 * UnitConversions.ONE_MINUTE_MS, 5);
+            } else if (minRecordingInterval == PreferencesUtils.getMinRecordingIntervalAdaptAccuracy(context)) {
+                // Get all the updates.
+                locationListenerPolicy = new AdaptiveLocationListenerPolicy(UnitConversions.ONE_SECOND_MS, 30 * UnitConversions.ONE_SECOND_MS, 0);
+            } else {
+                locationListenerPolicy = new AbsoluteLocationListenerPolicy(minRecordingInterval * UnitConversions.ONE_SECOND_MS);
+            }
+
+            if (locationManager != null) {
+                registerLocationListener();
+            }
+        }
+        if (PreferencesUtils.isKey(context, R.string.recording_gps_accuracy_key, key)) {
+            recordingGpsAccuracy = PreferencesUtils.getRecordingGPSAccuracy(context);
+        }
     }
 
     @Override

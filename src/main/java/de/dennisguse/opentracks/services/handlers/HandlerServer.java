@@ -1,6 +1,7 @@
 package de.dennisguse.opentracks.services.handlers;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 
 import de.dennisguse.opentracks.content.data.TrackPoint;
 
@@ -9,24 +10,23 @@ public class HandlerServer {
 
     private LocationHandler locationHandler;
     private HandlerServerInterface service;
-    private Context context;
 
-    public HandlerServer(Context context, HandlerServerInterface service) {
+    public HandlerServer(HandlerServerInterface service) {
         this.locationHandler = new LocationHandler(this);
         this.service = service;
-        this.context = context;
     }
 
-    public void start() {
-        locationHandler.onStart();
+    public void start(Context context) {
+        locationHandler.onStart(context);
+        locationHandler.onSharedPreferenceChanged(context, null, null);
     }
 
-    public void stop() {
-        locationHandler.onStop();
+    public void stop(Context context) {
+        locationHandler.onStop(context);
     }
 
-    public Context getContext() {
-        return context;
+    public void onSharedPreferenceChanged(Context context, SharedPreferences preferences, String key) {
+        locationHandler.onSharedPreferenceChanged(context, preferences, key);
     }
 
     public void sendTrackPoint(TrackPoint trackPoint, int recordingGpsAccuracy) {
@@ -36,5 +36,12 @@ public class HandlerServer {
     public interface HandlerServerInterface {
         void newTrackPoint(TrackPoint trackPoint, int gpsAccuracy);
     }
-}
 
+    public interface Handler {
+        void onStart(Context context);
+
+        void onStop(Context context);
+
+        void onSharedPreferenceChanged(Context context, SharedPreferences preferences, String key);
+    }
+}

@@ -72,14 +72,11 @@ public class TrackRecordingServiceTestLocation {
         sharedPreferences.edit().clear().commit();
 
         service = ((TrackRecordingServiceInterface) mServiceRule.bindService(TrackRecordingServiceTest.createStartIntent(context)));
-        //Disable executorService to not insert locations from GPS via LocationManager
-        service.enableLocationExecutor(false);
     }
 
     @After
     public void tearDown() {
         // Reset service (if some previous test failed)
-        service.enableLocationExecutor(true);
         if (service.isRecording() || service.isPaused()) {
             service.endCurrentTrack();
         }
