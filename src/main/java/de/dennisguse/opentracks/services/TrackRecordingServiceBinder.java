@@ -2,6 +2,7 @@ package de.dennisguse.opentracks.services;
 
 import androidx.annotation.VisibleForTesting;
 
+import de.dennisguse.opentracks.content.data.TrackPoint;
 import de.dennisguse.opentracks.content.sensor.SensorDataSet;
 import de.dennisguse.opentracks.services.sensors.BluetoothRemoteSensorManager;
 
@@ -97,5 +98,11 @@ class TrackRecordingServiceBinder extends android.os.Binder implements TrackReco
      */
     void detachFromService() {
         trackRecordingService = null;
+    }
+
+    @VisibleForTesting
+    @Override
+    public void newTrackPoint(TrackPoint trackPoint, int recordingGpsAccuracy) {
+        trackRecordingService.newTrackPoint(trackPoint, recordingGpsAccuracy);
     }
 }

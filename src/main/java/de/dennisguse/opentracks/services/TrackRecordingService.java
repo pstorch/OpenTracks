@@ -530,7 +530,7 @@ public class TrackRecordingService extends Service implements HandlerServer.Hand
             return;
         }
 
-        if (!LocationUtils.isValidLocation(lastValidTrackPoint.getLocation())) {
+        if (lastValidTrackPoint == null || !LocationUtils.isValidLocation(lastValidTrackPoint.getLocation())) {
             // For some reason the previous first trackPoint was not stored, but currentSegmentHasLocation set true.
             // Should not happen. The current segment should have a location. Just insert the current location.
             insertTrackPoint(track, trackPoint);
