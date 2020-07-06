@@ -34,6 +34,7 @@ import de.dennisguse.opentracks.util.StringUtils;
  * @author Sandor Dornbush
  */
 //TODO Can we export SensorData in GPX?
+//TODO Export waypoints
 public class GpxTrackWriter implements TrackWriter {
 
     private static final NumberFormat ELEVATION_FORMAT = NumberFormat.getInstance(Locale.US);
@@ -82,6 +83,7 @@ public class GpxTrackWriter implements TrackWriter {
             printWriter.println("xmlns=\"http://www.topografix.com/GPX/1/1\"");
             printWriter.println("xmlns:topografix=\"http://www.topografix.com/GPX/Private/TopoGrafix/0/1\"");
             printWriter.println("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"");
+            printWriter.println("xmlns:atom=\"http://www.w3.org/2005/Atom\"");
             printWriter.println("xsi:schemaLocation=\"http://www.topografix.com/GPX/1/1"
                     + " http://www.topografix.com/GPX/1/1/gpx.xsd"
                     + " http://www.topografix.com/GPX/Private/TopoGrafix/0/1"
@@ -90,6 +92,7 @@ public class GpxTrackWriter implements TrackWriter {
             Track track = tracks[0];
             printWriter.println("<name>" + StringUtils.formatCData(track.getName()) + "</name>");
             printWriter.println("<desc>" + StringUtils.formatCData(track.getDescription()) + "</desc>");
+            printWriter.println("<atom:id>" + track.getUuid() + "</atom:id>");
             printWriter.println("</metadata>");
         }
     }
@@ -115,17 +118,15 @@ public class GpxTrackWriter implements TrackWriter {
     public void writeWaypoint(Waypoint waypoint) {
         if (printWriter != null) {
             Location location = waypoint.getLocation();
-            if (location != null) {
-                printWriter.println("<wpt " + formatLocation(location) + ">");
-                if (location.hasAltitude()) {
-                    printWriter.println("<ele>" + ELEVATION_FORMAT.format(location.getAltitude()) + "</ele>");
-                }
-                printWriter.println("<time>" + StringUtils.formatDateTimeIso8601(location.getTime()) + "</time>");
-                printWriter.println("<name>" + StringUtils.formatCData(waypoint.getName()) + "</name>");
-                printWriter.println("<desc>" + StringUtils.formatCData(waypoint.getDescription()) + "</desc>");
-                printWriter.println("<type>" + StringUtils.formatCData(waypoint.getCategory()) + "</type>");
-                printWriter.println("</wpt>");
+            printWriter.println("<wpt " + formatLocation(location) + ">");
+            if (location.hasAltitude()) {
+                printWriter.println("<ele>" + ELEVATION_FORMAT.format(location.getAltitude()) + "</ele>");
             }
+            printWriter.println("<time>" + StringUtils.formatDateTimeIso8601(location.getTime()) + "</time>");
+            printWriter.println("<name>" + StringUtils.formatCData(waypoint.getName()) + "</name>");
+            printWriter.println("<desc>" + StringUtils.formatCData(waypoint.getDescription()) + "</desc>");
+            printWriter.println("<type>" + StringUtils.formatCData(waypoint.getCategory()) + "</type>");
+            printWriter.println("</wpt>");
         }
     }
 
@@ -174,8 +175,7 @@ public class GpxTrackWriter implements TrackWriter {
             if (trackPoint.hasAltitude()) {
                 printWriter.println("<ele>" + ELEVATION_FORMAT.format(trackPoint.getAltitude()) + "</ele>");
             }
-            printWriter.println(
-                    "<time>" + StringUtils.formatDateTimeIso8601(trackPoint.getTime()) + "</time>");
+            printWriter.println("<time>" + StringUtils.formatDateTimeIso8601(trackPoint.getTime()) + "</time>");
             printWriter.println("<speed>" + trackPoint.getSpeed() + "</speed>");
             printWriter.println("</trkpt>");
         }

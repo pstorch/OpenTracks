@@ -117,6 +117,7 @@ public class KmlTrackWriter implements TrackWriter {
                 Track track = tracks[0];
                 printWriter.println("<name>" + StringUtils.formatCData(track.getName()) + "</name>");
                 printWriter.println("<atom:generator>" + StringUtils.formatCData(context.getString(R.string.app_name)) + "</atom:generator>");
+                printWriter.println("<atom:id>" + track.getUuid() + "</atom:id>");
             }
 
             writeTrackStyle();
@@ -460,7 +461,7 @@ public class KmlTrackWriter implements TrackWriter {
     /**
      * Writes a simple array style.
      *
-     * @param name       the name of the simple array.
+     * @param name             the name of the simple array.
      * @param extendedDataType the extended data display name
      */
     private void writeSimpleArrayStyle(String name, String extendedDataType) {

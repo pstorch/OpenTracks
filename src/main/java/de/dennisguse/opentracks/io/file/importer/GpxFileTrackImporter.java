@@ -45,6 +45,7 @@ public class GpxFileTrackImporter extends AbstractFileTrackImporter {
     private static final String TAG_TRACK_SEGMENT = "trkseg";
     private static final String TAG_TYPE = "type";
     private static final String TAG_WAYPOINT = "wpt";
+    private static final String TAG_ID = "atom:id";
 
     private static final String ATTRIBUTE_LAT = "lat";
     private static final String ATTRIBUTE_LON = "lon";
@@ -131,6 +132,10 @@ public class GpxFileTrackImporter extends AbstractFileTrackImporter {
                     waypointType = content.trim();
                 }
                 break;
+            case TAG_ID:
+                if (content != null) {
+                    uuid = content.trim();
+                }
         }
 
         // Reset element content
